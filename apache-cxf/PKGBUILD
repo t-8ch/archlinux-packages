@@ -1,0 +1,31 @@
+# Maintainer: Thomas Weißschuh <thomas_weissschuh lavabit.com>
+# Contributor: Caleb Cushing <xenoterracide@gmail.com>
+
+pkgname=apache-cxf
+pkgver=2.7.0
+pkgrel=1
+pkgdesc='open source services framework'
+arch=('any')
+license=('Apache')
+url='http://cxf.apache.org'
+depends=('java-runtime')
+source=("http://www.us.apache.org/dist/cxf/${pkgver}/${pkgname}-${pkgver}.tar.gz"
+  'apache-cxf.sh')
+sha256sums=('25d2d7ba726acd265eb656188f385333041f6e0ece297e899cbdffa14b814b05'
+            'fc0b25735c0c3294cd1dc1adb892a708b2ac6ab2520b126d8bd0e44837a4bd30')
+
+build() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  install -m755 -d \
+    "${pkgdir}/usr/share/${pkgname}/lib" \
+    "${pkgdir}/usr/bin" \
+    "${pkgdir}/etc/profile.d"
+
+  cp -r "${srcdir}/${pkgname}-${pkgver}/lib/"* "${pkgdir}/usr/share/${pkgname}/lib"
+  rm "${pkgdir}/usr/share/${pkgname}/lib/WHICH_JARS"
+
+  cp -r "${srcdir}/${pkgname}-${pkgver}/bin" "${pkgdir}/usr/"
+  find "${pkgdir}/usr/bin/" -name '*.bat' -delete
+
+  install -m 644  "${srcdir}/apache-cxf.sh" "${pkgdir}/etc/profile.d"
+}
