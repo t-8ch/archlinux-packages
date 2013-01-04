@@ -1,4 +1,4 @@
-# Maintainer: Thomas Weißschuh <thomas_weissschuh lavabit.com>
+# Maintainer: Thomas Weißschuh <thomas t-8ch de>
 # Contributor: Carl George <cwgtex gmail.com>
 
 pkgname=palm-novacom-git
@@ -9,7 +9,7 @@ arch=('x86_64' 'i686')
 url="http://openwebosproject.org/"
 license=('Apache')
 depends=('libusb-compat')
-makedepends=('libusb-compat' 'cmake-modules-webos')
+makedepends=('libusb-compat' 'cmake-modules-webos-git')
 provides=('palm-novacom')
 conflicts=('palm-novacom')
 source=('novacomd-rc.d' 'novacomd-conf.d' 'novacomd.service'
