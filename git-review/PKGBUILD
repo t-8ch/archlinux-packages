@@ -1,0 +1,23 @@
+# Maintainer: Thomas Weißschuh <thomas t-8ch de>
+
+pkgname=git-review
+pkgver=1.22
+pkgrel=1
+pkgdesc="Tool to submit code to Gerrit"
+arch=(any)
+url="https://launchpad.net/git-review"
+license=(APACHE)
+depends=(python2-distribute)
+source=("https://pypi.python.org/packages/source/g/git-review/git-review-${pkgver}.tar.gz")
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python2 setup.py build
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python2 setup.py install --root="$pkgdir"
+}
+
+sha256sums=('790daf8003a8e9fcc2368edec29561545e574c189d14896707f8d9e90ec20175')
