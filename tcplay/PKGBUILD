@@ -2,29 +2,31 @@
 # Contributor: James Reed <supplantr at archlinux dot info>
 
 pkgname=tcplay
-pkgver=0.11
-pkgrel=1
+pkgver=1.0
+pkgrel=2
 pkgdesc="Free and simple TrueCrypt implementation based on dm-crypt."
 arch=('i686' 'x86_64')
 url="https://github.com/bwalex/tc-play"
 license=('BSD')
 depends=('libgcrypt' 'util-linux' 'device-mapper')
-source=("https://github.com/bwalex/tc-play/archive/v${pkgver}.tar.gz")
+makedepends=('cmake')
+source=("https://github.com/bwalex/tc-play/archive/v${pkgver}.tar.gz"
+        "sbin-dir-usr-move.patch")
 
 build() {
   cd "$srcdir/tc-play-$pkgver"
-  make PBKDF_BACKEND=gcrypt program
-  # how to handle .so names?
-  # make PBKDF_BACKEND=gcrypt program lib
+  patch -p0 -i "$srcdir/sbin-dir-usr-move.patch"
+  rm -rf objdir
+  mkdir objdir
+  cd objdir
+  cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+  make
 }
 
 package() {
-  cd "$srcdir/tc-play-$pkgver"
-  install -Dm755 tcplay "${pkgdir}/usr/bin/tcplay"
-  # install -Dm755 libtcplay.so "${pkgdir}/usr/lib/libtcplay.so"
-  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/tcplay/LICENSE"
-  install -Dm644 tcplay.3 "${pkgdir}/usr/share/man/man3/tcplay.3"
-  install -Dm644 tcplay.8 "${pkgdir}/usr/share/man/man8/tcplay.8"
+  cd "$srcdir/tc-play-$pkgver/objdir"
+  make DESTDIR="$pkgdir" install
 }
 
-sha256sums=('a390a62ffc107013868c2db9851a99bab7ef3ec4c8f98dac160f0b0d26766977')
+sha256sums=('36d7dff4f08f6dbfbbf7763e05e757c1a14a0ecb98a638694b80ab4890d52155'
+            'b31ed9c5c31b6157d69a1aa7a0ccb7f30435af182e02a32faf9005f18b73b923')
