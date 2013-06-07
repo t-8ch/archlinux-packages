@@ -1,0 +1,77 @@
+# Maintainer: Jan Was <janek.jan+arch@gmail.com>
+# Great Contributor: mainiak <mainiak@gmail.com> (first maintainer)
+# Contributor: spooky <spookyh+arch@gmail.com> 
+# Contributor: Hyacinthe Cartiaux <hyacinthe.cartiaux@free.fr>
+
+pkgname=apt-cacher-ng
+pkgver=0.7.12
+pkgrel=1
+pkgdesc="A caching proxy specialized for package files."
+url="http://www.unix-ag.uni-kl.de/~bloch/acng/"
+arch=('i686' 'x86_64')
+license=('custom')
+depends=('zlib' 'bzip2' 'fuse' 'xz' 'gcc-libs')
+makedepends=('cmake')
+source=("http://ftp.debian.org/debian/pool/main/a/apt-cacher-ng/apt-cacher-ng_${pkgver}.orig.tar.xz"
+        'acng.conf.patch'
+        'apt-cacher-ng.service'
+        'apt-cacher-ng.tmpfiles'
+        'apt-cacher-ng.rc.d')
+
+backup=('etc/apt-cacher-ng/acng.conf')
+install=apt-cacher-ng.install
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  patch -Np0 -i ../acng.conf.patch
+  make all
+}
+
+package() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+
+  pushd conf
+  for i in *; do
+    install -D -m644 "$i" "$pkgdir/etc/apt-cacher-ng/$i"
+  done
+  popd
+
+  pushd doc
+  for i in {000apt-cacher-ng-proxy,apt-cacher-ng.pdf,html/*,README}; do
+    install -D -m644 "$i" "$pkgdir/usr/share/doc/apt-cacher-ng/$i"
+  done
+
+  install -D -m644 man/apt-cacher-ng.8 \
+                   "$pkgdir/usr/share/man/man8/apt-cacher-ng.8"
+  install -D -m644 man/acngfs.8 \
+                   "$pkgdir/usr/share/man/man8/acngfs.8"
+
+  popd
+
+  install -D -m644 COPYING "$pkgdir/usr/share/licenses/apt-cacher-ng/LICENSE"
+
+  install -D -m755 build/apt-cacher-ng "$pkgdir/usr/bin/apt-cacher-ng"
+  install -D -m755 build/acngfs "$pkgdir/usr/bin/acngfs"
+  install -D -m755 build/in.acng "$pkgdir/usr/bin/in.acng"
+
+  install -D -m755 "$srcdir/apt-cacher-ng.rc.d" \
+                   "$pkgdir/etc/rc.d/apt-cacher-ng"
+  install -D -m644 "$srcdir/apt-cacher-ng.service" \
+                   "$pkgdir/usr/lib/systemd/system/apt-cacher-ng.service"
+  install -D -m644 "$srcdir/apt-cacher-ng.tmpfiles" \
+                   "$pkgdir/usr/lib/tmpfiles.d/apt-cacher-ng.conf"
+
+  install -d -m755 -o 384 -g 384 "$pkgdir/var/log/apt-cacher-ng"
+  install -d -m755 -o 384 -g 384 "$pkgdir/var/cache/apt-cacher-ng"
+}
+sha256sums=('8d5e30c754278adbe43f54cb6efdef16158c3a29bff2f2bdf7892c4f916394ac'
+            'e3a9a3ba4adcad535ad32dc18dfedd4efe8b5ded27a9016b81743537d4c77550'
+            '72824be7dd93559fe4928270d3c9da7a724deb0b42a311da598f1a60d1d10b75'
+            'f161b57d9eb00609205f119de65c8983538d6d648faabfbd42444faf90124524'
+            '5df20eac2e8f7f941059729ed058e66db4bb44ba02093528e7d1df8ff1b03d1d')
+sha256sums=('8d5e30c754278adbe43f54cb6efdef16158c3a29bff2f2bdf7892c4f916394ac'
+            'e3a9a3ba4adcad535ad32dc18dfedd4efe8b5ded27a9016b81743537d4c77550'
+            '18130f770fc26576c5b342f8e37bb398ddebd17c07077ea855711d4d7f6a4257'
+            'f161b57d9eb00609205f119de65c8983538d6d648faabfbd42444faf90124524'
+            '5df20eac2e8f7f941059729ed058e66db4bb44ba02093528e7d1df8ff1b03d1d')
