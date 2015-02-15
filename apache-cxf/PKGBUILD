@@ -1,8 +1,9 @@
 # Maintainer: Thomas Weißschuh <thomas t-8ch de>
 # Contributor: Caleb Cushing <xenoterracide@gmail.com>
+# Contributor: Attila Bukor <r1pp3rj4ck@w4it.eu>
 
 pkgname=apache-cxf
-pkgver=2.7.8
+pkgver=3.0.2
 pkgrel=1
 pkgdesc='open source services framework'
 arch=('any')
@@ -12,21 +13,28 @@ depends=('java-runtime')
 source=("http://www.us.apache.org/dist/cxf/${pkgver}/${pkgname}-${pkgver}.tar.gz"
         'apache-cxf.sh')
 
-build() {
+package() {
   cd "${srcdir}/${pkgname}-${pkgver}"
   install -m755 -d \
-    "${pkgdir}/usr/share/${pkgname}/lib" \
+    "${pkgdir}/usr/share/java/${pkgname}/lib" \
+    "${pkgdir}/usr/share/doc/${pkgname}" \
     "${pkgdir}/usr/bin" \
     "${pkgdir}/etc/profile.d"
 
-  cp -r "${srcdir}/${pkgname}-${pkgver}/lib/"* "${pkgdir}/usr/share/${pkgname}/lib"
-  rm "${pkgdir}/usr/share/${pkgname}/lib/WHICH_JARS"
+  cp -r "${srcdir}/${pkgname}-${pkgver}/lib/"* \
+          "${pkgdir}/usr/share/java/${pkgname}/lib"
+  rm "${pkgdir}/usr/share/java/${pkgname}/lib/WHICH_JARS"
+  cp -r "${srcdir}/${pkgname}-${pkgver}/docs/api" \
+          "${pkgdir}/usr/share/doc/${pkgname}"
 
   cp -r "${srcdir}/${pkgname}-${pkgver}/bin" "${pkgdir}/usr/"
   find "${pkgdir}/usr/bin/" -name '*.bat' -delete
 
+  # to resolve conflict between midnight commander and apache-cxf
+  mv "${pkgdir}/usr/bin/mc" "${pkgdir}/usr/bin/apache-mc"
+
   install -m 644  "${srcdir}/apache-cxf.sh" "${pkgdir}/etc/profile.d"
 }
 
-sha256sums=('bc263b2c99fe11d86688b30104e43746dfafc78e47c66f6183b821654e1a1022'
-            'fc0b25735c0c3294cd1dc1adb892a708b2ac6ab2520b126d8bd0e44837a4bd30')
+sha256sums=('befa622a6d50a622a776f368ea3b6d1ff25560a1bfede067d76de2c629abfe61'
+            'c52ba86604138776e50f6fc9506e21ad6f30064a54a0aaef3d5316245b14e668')
