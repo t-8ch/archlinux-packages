@@ -19,6 +19,9 @@ prepare() {
 
   sed -i 's/raise ValueError, "Not enough space"/raise ValueError("Not enough space")/' tools/erml2pdf.py
 
+  echo 'Warning! Locales are not built due to a workaround in the CMake configuration'
+  find po -name CMakeLists.txt -delete
+
   rm -rf build
   mkdir -p build
   cd build
