@@ -1,76 +1,121 @@
 #!/bin/bash
 
-#### Declare usage
-
-usage()
-{
-	cat <<- _EOF_
-		Usage: ./aurpublish [OPTIONS] PACKAGE
-		Push a subtree to the AUR
+# Help function, declare usage
+function usage() {
+	cat <<-EOF
+		Usage: ./$(basename "$0") [OPTIONS] PACKAGE
+		Manage AUR packages as git subtree
 
 		OPTIONS
-		    -p, --pull      instead of publishing, pull changes from the AUR.
-		                      Can import packages into a new subtree.
-		    -s, --speedup   speedup future publishing by recording the subtree
-		                      history during a push. This creates a merge commit
-		                      and a second copy of all commits in the subtree.
-		                      For more details, see the "--rejoin" option in git
-		                      subtree.
-		    -h, --help      show this usage message
-_EOF_
+		    -p, --pull                   Pull changes from the AUR or import a new package
+		    -g, --git "<git options>"    Pass additional options to git (in brackets)
+		    -s, --check-https            Check http links which could be https
+		    -h, --help                   Show this help message
+	EOF
 }
 
-## Function to test if package is already committed in git
-is_package_in_git()
-{
-    git ls-tree -d --name-only HEAD | grep -E "^${1}$" > /dev/null 2>&1
+# Check for links in all packages which are using http but could be using https
+function check_https() {
+	[[ -n "$*" ]] && path=($@) || path=(.)
+	for link in $( (find ${path[@]} -type f -iname pkgbuild -exec pcregrep -iH "http[^s]" {} \;) | sed 's/.*http:\/\/\([^\/]*\).*/\1/g' | sort | uniq); do
+		echo -n "${link}: "
+		if ! curl -s "https://${link}" >/dev/null; then
+			echo -e "\e[31mFALSE\e[39m"
+		else
+			echo -e "\e[32mTRUE\e[39m"
+			find ${path[@]} -type f -iname pkgbuild -exec pcregrep -H "http://${link}" {} \;
+		fi
+	done
 }
 
-#### Do the great option check
+# Push package to the AUR
+function push_packages() {
+	for package in $@; do
+		git subtree push -P "${package}" aur@aur.archlinux.org:${package}.git master $GIT_OPTS
+	done
+}
 
-if [[ $# -eq 0 ]]; then
-    echo "error: No arguments passed. aurpublish needs a package to upload."
-    exit 1
+# Pull package into its own subtree
+function pull_packages() {
+	for package in $@; do
+		# Test if prefix already exists respectively whether a package is already committed in git
+		if (git ls-tree -d --name-only HEAD | grep -E "^${package}$" >/dev/null 2>&1); then
+			# Pull package, one at a time
+			git subtree pull -P "${package}" aur@aur.archlinux.org:${package}.git master -m "Merge subtree '${package}'" $GIT_OPTS
+		else
+			git subtree add --squash -P "${package}" aur@aur.archlinux.org:${package}.git master $GIT_OPTS
+		fi
+	done
+}
+
+# Do the great option check
+if ! PARAMS=$(getopt -o pshg: -l help,pull,check-https,git: -n "aurpublish" -- "$@"); then
+	>&2 echo "error: No arguments passed."
+	usage
+	exit 2
 fi
-while [[ "${1}" != "" ]]; do
-    case ${1} in
-        -h|--help)
-            usage
-            exit
-            ;;
-        -p|--pull)
-            pull_subtree=1
-            shift
-            package="${1}"
-            ;;
-        -s|--speedup)
-            speedup=1
-            ;;
-        *)
-            if is_package_in_git ${1%/}; then
-                package="${1%/}"
-            else
-                echo "${0}: unrecognized package '${1}'"
-                echo "Try '${0} --help' for more information."
-                exit 1
-            fi
-    esac
-    shift
+eval set -- "$PARAMS"
+while true; do
+	case "$1" in
+		-h|--help)
+		usage
+		exit
+		;;
+
+		-p|--pull)
+		PULL_SUBTREE=true
+		;;
+
+		-g|--git)
+		if [[ "$2" ]]; then
+			GIT_OPTS="$2"
+		else
+			>&2 echo "No additional arguments given for git." && usage && exit 2
+		fi
+		shift
+		;;
+
+		-s|--check-https)
+		CHECK_HTTPS=true
+		;;
+
+		--)
+		shift
+		break
+		;;
+
+		*)
+		usage
+		exit 1
+		;;
+	esac
+	shift
 done
+PACKAGE_ARRAY=($@)
 
-#### MAIN
+# Remove trailing slashes from each package (if they even have one)
+[[ -n "${PACKAGE_ARRAY[*]}" ]] && PACKAGE_ARRAY=("${PACKAGE_ARRAY[@]%/}")
+# Strip directory information
+[[ -n "${PACKAGE_ARRAY[*]}" ]] && PACKAGE_ARRAY=("$(basename -a "${PACKAGE_ARRAY[@]}")")
 
-if [[ "${pull_subtree}" = "1" ]]; then
-    # test if prefix already exists
-    if is_package_in_git ${package}; then
-        git subtree pull -P "${package}" aur:${package}.git master -m "Merge subtree '${package}'"
-    else
-        git subtree add -P "${package}" aur:${package}.git master
-    fi
-    exit 0
+# Save current path to get back later
+previous_pwd="$(pwd)"
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# Invoke the appropiate function to run the specified options
+if [[ "${CHECK_HTTPS,,}" == "true" ]]; then
+	check_https ${PACKAGE_ARRAY[@]}
+elif [[ -n "${PACKAGE_ARRAY[*]}" ]]; then
+	# Running pull or push commands makes sense only if a packages was specified
+	if [[ "${PULL_SUBTREE,,}" == "true" ]]; then
+		pull_packages ${PACKAGE_ARRAY[@]}
+	else
+		push_packages ${PACKAGE_ARRAY[@]}
+	fi
+else
+	usage
+	exit 2
 fi
 
-if [[ "${speedup}" = "1" ]]; then
-    git subtree split -P "${package}" --rejoin
-fi
-git subtree push -P "${package}" aur:${package}.git master
+# Restore previous path
+cd "${previous_pwd}" || exit 1
