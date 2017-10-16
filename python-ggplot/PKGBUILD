@@ -3,7 +3,7 @@
 pkgbase=python-ggplot
 pkgname=(python-ggplot python2-ggplot)
 _libname=${pkgbase/python-/}
-pkgver=0.11.2
+pkgver=0.11.5
 pkgrel=1
 pkgdesc='ggplot for python'
 arch=('any')
@@ -42,4 +42,4 @@ package_python2-ggplot() {
     python2 setup.py install --root="$pkgdir" --optimize=1
 }
 
-sha256sums=('b01df3498865281730d137455df53fbd7b8c313dbdcc2a7275598f1f9df8dd08')
+sha256sums=('48bbc9ea5987f815ad25856d76573506dbfe153ff696f026ce324582af56469f')
