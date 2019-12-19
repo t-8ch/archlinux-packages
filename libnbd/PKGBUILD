@@ -7,6 +7,8 @@ pkgdesc="NBD client library in userspace"
 arch=('i686' 'x86_64')
 url="https://github.com/libguestfs/libnbd"
 license=('LGPL2.1')
+# can optionally compile with
+# ('gnutls' 'python' 'ocaml')
 depends=()
 makedepends=('perl')
 validpgpkeys=('F7774FB1AD074A7E8C8767EA91738F73E1B768A0')
