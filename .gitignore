@@ -8,6 +8,8 @@
 *.sig
 
 # subfolders, e.g. source or built package trees, vcs
+!PKGBUILD
+!.SRCINFO
 */**/
 
 # backup files
